@@ -68,10 +68,13 @@ app.get('/tasks/:id', async (req, res) => {
 
     try {
         const task = await Task.findById(_id)
+
         if(!task) {
             return res.status(500).send()
         }
+
         res.send(task)
+
     } catch {
         res.status(404).send()
     }
@@ -90,11 +93,13 @@ app.patch('/users/:id', async (req, res) => {
 
     try {
         const user = await User.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true})
+
         if(!user){
             return res.status(404).send()
         }
 
         res.send(user)
+
     } catch {
         res.status(400)
     }
@@ -111,10 +116,43 @@ app.patch('/tasks/:id', async (req, res)=> {
 
     try {
         const task = await Task.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true})
+
         if(!task) {
             res.status(500).send()
         }
+
         res.send(task)
+
+    } catch {
+        res.status(500).send()
+    }
+})
+
+app.delete('/users/:id', async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id)
+
+        if(!user){
+            return res.status(404).send()
+        }
+
+        res.send(user)
+
+    } catch {
+        res.status(500).send()
+    }
+})
+
+app.delete('/tasks/:id', async (req, res) => {
+    try {
+        const task = await Task.findByIdAndDelete(req.params.id)
+
+        if(!task) {
+            return res.status(404).send()
+        }
+
+        res.send(task)
+
     } catch {
         res.status(500).send()
     }
