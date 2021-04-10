@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcrypt')
+const jwt =  require('jsonwebtoken')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -13,6 +14,7 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim: true,
         lowercase: true,
+        unique: true,
         validate(value) {
             if(!validator.isEmail(value)) {
                throw new Error('Email is invalid') 
@@ -37,13 +39,56 @@ const userSchema = new mongoose.Schema({
                 throw new Error('Password should not include the word password')
             }
         }
-    }
+    },
+    tokens: [{
+        token: {
+            type: String,
+            required: true
+        }
+    }]
 })
 
+userSchema.methods.toJSON = function () {
+    const user = this
+    const userObject = user.toObject()
+
+    delete userObject.password
+    delete userObject.tokens
+
+    return userObject
+
+}
+
+userSchema.methods.generateAuthToken = async function () {
+    const user = this
+    const token = jwt.sign({ _id: user.id.toString() }, 'thisismynewcourse')
+
+    user.tokens = user.tokens.concat({ token })
+    await user.save()
+
+    return token
+}
+
+userSchema.statics.findByCredentials = async (email, password) => {
+    const user = await User.findOne({ email })
+
+    if (!user){
+        throw new Error('Unable to login')
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password)
+
+    if (!isMatch){
+        throw new Error('Unable to login')
+    }
+
+    return user
+}
+
+// Hash plain password
 userSchema.pre('save', async function (next) {
     const user = this
 
-    console.log('before')
     if (user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8)
     }
